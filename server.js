@@ -1,11 +1,16 @@
 const express = require('express');
 const connection = require('./db');
+const cors = require('cors');
 
 const app = express();
 app.use(express.json());
 
-const cors = require('cors');
-app.use(cors());
+// ✅ CORS explícito para permitir todas las IPs (especialmente frontend externo)
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type'],
+}));
 
 // 🚀 Obtener todos los productos
 app.get('/productos', (req, res) => {
@@ -35,7 +40,7 @@ app.put('/productos/:id', (req, res) => {
     connection.query(
         'UPDATE productos SET descripcion = ?, cantidad = ? WHERE id = ?',
         [descripcion, cantidad, id],
-        (err) => {
+        (err, results) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Producto actualizado' });
         }
@@ -45,13 +50,20 @@ app.put('/productos/:id', (req, res) => {
 // 🚀 Eliminar un producto
 app.delete('/productos/:id', (req, res) => {
     const { id } = req.params;
-    connection.query('DELETE FROM productos WHERE id = ?', [id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Producto eliminado' });
-    });
+    connection.query(
+        'DELETE FROM productos WHERE id = ?',
+        [id],
+        (err, results) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Producto eliminado' });
+        }
+    );
 });
 
-// Iniciar servidor
-app.listen(3000, () => {
-    console.log('Servidor ejecutándose en http://localhost:3000');
+// ✅ Escuchar en 0.0.0.0 para que sea accesible desde una IP pública
+const PORT = 3000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor corriendo en http://0.0.0.0:${PORT}`);
 });
+
+
